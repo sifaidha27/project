@@ -1,0 +1,17 @@
+documind-ai/
+│
+├── .gitignore
+├── README.md
+├── requirements.txt
+│
+├── backend/
+│   ├── __init__.py
+│   ├── main.py
+│   └── routers/
+│       ├── __init__.py
+│       ├── upload.py
+│       ├── summary.py
+│       └── quiz.py
+│
+└── frontend/
+    └── index.html
