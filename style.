@@ -1,0 +1,22 @@
+# DocuMind AI Platform 🚀
+
+DocuMind AI adalah aplikasi web berbasis AI untuk mengunggah dokumen (PDF/TXT), menghasilkan ringkasan eksekutif, dan membuat soal kuis interaktif secara otomatis.
+
+## 🛠️ Teknologi yang Digunakan
+- **Frontend**: HTML5, JavaScript (Fetch API), Tailwind CSS
+- **Backend**: Python 3.10+, FastAPI, Uvicorn
+
+## 🚀 Cara Menjalankan
+
+### 1. Backend (FastAPI)
+```bash
+# Buat virtual environment (opsional)
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# Install dependensi
+pip install -r requirements.txt
+
+# Jalankan server FastAPI
+uvicorn backend.main:app --reload --port 8000
