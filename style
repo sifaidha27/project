@@ -1,0 +1,32 @@
+from backend.routers.upload import documents_db
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
+router = APIRouter()
+
+
+class SummaryRequest(BaseModel):
+  document_id: str
+
+
+@router.post("/generate-summary")
+async def generate_summary(req: SummaryRequest):
+  if req.document_id not in documents_db:
+    raise HTTPException(
+        status_code=404, detail="Dokumen tidak ditemukan atau telah kadaluwarsa."
+    )
+
+  doc_content = documents_db[req.document_id]["content"]
+
+  # Integrasikan dengan LLM (OpenAI / Gemini API / LangChain) di bagian ini
+  return {
+      "executive_summary": (
+          "Dokumen ini membahas tentang implementasi kecerdasan buatan (AI) "
+          "dalam otomatisasi ekstraksi teks, analisis konten, dan pembuatan kuis."
+      ),
+      "bullet_points": [
+          "Meningkatkan efisiensi pengolahan dokumen digital.",
+          "Otomatisasi pembuatan ringkasan eksekutif secara instan.",
+          "Pembuatan kuis evaluasi berbasis konten dokumen.",
+      ],
+  }
