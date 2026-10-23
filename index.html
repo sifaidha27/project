@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuMind AI - Summarizer & Quiz Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <header class="bg-white border-b border-slate-200 py-4 px-6 font-bold text-lg text-indigo-600">
+    DocuMind AI Platform
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+    <!-- Panel Kiri: Upload Dokumen -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+      <h2 class="font-semibold text-slate-900">1. Unggah Dokumen (PDF / TXT)</h2>
+      <input 
+        type="file" 
+        id="file-input" 
+        accept=".pdf,.txt" 
+        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+      >
+      
+      <div class="space-y-2 pt-4">
+        <button id="btn-summary" disabled class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 font-medium text-sm transition">
+          Buat Ringkasan
+        </button>
+        <button id="btn-quiz" disabled class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg disabled:opacity-50 font-medium text-sm transition">
+          Buat Kuis Interaktif
+        </button>
+      </div>
+    </div>
+
+    <!-- Panel Kanan: Hasil Output -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <h2 class="font-semibold text-slate-900 mb-4">2. Hasil Analisis AI</h2>
+      <div id="output-area" class="text-sm text-slate-600">
+        <p class="italic text-slate-400">Belum ada dokumen yang dianalisis.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:8000/api';
+    let docId = null;
+
+    // Handler untuk Unggah File
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/upload-document`, { 
+          method: 'POST', 
+          body: formData 
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          docId = data.document_id;
+          document.getElementById('btn-summary').disabled = false;
+          document.getElementById('btn-quiz').disabled = false;
+          alert("Dokumen berhasil diunggah!");
+        } else {
+          alert(data.detail || "Gagal mengunggah dokumen.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Gagal terhubung ke server backend.");
+      }
+    });
+
+    // Handler untuk Generate Ringkasan
+    document.getElementById('btn-summary').addEventListener('click', async () => {
+      if (!docId) return;
+      const outputArea = document.getElementById('output-area');
+      outputArea.innerHTML = "<p class='animate-pulse text-indigo-600'>Memproses ringkasan...</p>";
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}/generate-summary`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ document_id: docId })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          outputArea.innerHTML = `
+            <h3 class="font-bold text-indigo-900 mb-1">Executive Summary</h3>
+            <p class="mb-4 leading-relaxed">${data.executive_summary}</p>
+            <h3 class="font-bold text-indigo-900 mb-1">Poin Penting</h3>
+            <ul class="list-disc pl-5 mb-4 space-y-1">
+              ${data.bullet_points.map(p => `<li>${p}</li>`).join('')}
+            </ul>
+          `;
+        } else {
+          outputArea.innerHTML = `<p class="text-red-500">${data.detail}</p>`;
+        }
+      } catch (err) {
+        outputArea.innerHTML = `<p class="text-red-500">Gagal mengambil data dari server.</p>`;
+      }
+    });
+
+    // Handler untuk Generate Kuis
+    document.getElementById('btn-quiz').addEventListener('click', async () => {
+      if (!docId) return;
+      const outputArea = document.getElementById('output-area');
+      outputArea.innerHTML = "<p class='animate-pulse text-indigo-600'>Membuat soal kuis...</p>";
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}/generate-quiz`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ document_id: docId, num_questions: 3 })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          outputArea.innerHTML = data.questions.map((q, i) => `
+            <div class="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <p class="font-semibold mb-2">${i + 1}. ${q.question}</p>
+              <div class="space-y-1">
+                ${q.options.map(o => `<p class="text-xs py-1 px-2 rounded bg-white border"><strong>${o.option_id}.</strong> ${o.option_text}</p>`).join('')}
+              </div>
+              <p class="text-xs text-emerald-600 font-semibold mt-2">Kunci Jawaban: ${q.correct_option_id}</p>
+            </div>
+          `).join('');
+        } else {
+          outputArea.innerHTML = `<p class="text-red-500">${data.detail}</p>`;
+        }
+      } catch (err) {
+        outputArea.innerHTML = `<p class="text-red-500">Gagal mengambil data dari server.</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
